@@ -118,23 +118,23 @@ class MultiApp:
                     st.chat_message("user").markdown(parts[0])
                 elif role == "model":
                     st.chat_message("assistant").markdown(parts[0])
-        chat = st.radio("Select one of the following options", ["Common Cold", "Influenza (Flu)", "Pneumonia", "Tuberculosis (TB)", "Hypertension", "Other","none of these"])
-        if chat == "Other":
-            chat2 = st.text_input("Enter the disease name")
-        if chat == "Other":
-            chat = chat2
+        # chat = st.radio("Select one of the following options", ["Common Cold", "Influenza (Flu)", "Pneumonia", "Tuberculosis (TB)", "Hypertension", "Other","none of these"])
+        # if chat == "Other":
+        #     chat2 = st.text_input("Enter the disease name")
+        # if chat == "Other":
+        #     chat = chat2
 
         st.write("How can I help you?")
         chat_message = st.chat_input("Ask me about health related query...")
 
-        if chat == "none of these":
-            instruction = " "
-        else:
-            instruction = "person is in " + chat
+        # if chat == "none of these":
+        #     instruction = " "
+        # else:
+        #     instruction = "person is in " + chat
 
         res = None
         if chat_message:
-            st.chat_message("user").markdown(chat_message + instruction)
+            st.chat_message("user").markdown(chat_message)
             res_area = st.chat_message("assistant").markdown("...")
 
             if select_model == "Image Consultancy":
