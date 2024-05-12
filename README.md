@@ -55,7 +55,7 @@ To install DociFy, follow these steps:
 ```
 5. Web Design UI/UX
 
-![alt text](image.png)
+![alt text](image-1.png)
 
  
 ## Usage
