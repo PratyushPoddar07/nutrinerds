@@ -1,4 +1,4 @@
-# nutrinerds
+# NutriNerds
 # DociFy - Virtual Health Assistance / food   detection
 
 ## Project Overview
