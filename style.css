@@ -1,9 +1,16 @@
-.st-emotion-cache-10trblm.e1nzilvr1{
-    
-    border: 2px solid rgb(42, 165, 144);
-    padding: 20px 20px 20px 70px;
-    border-radius: 10px;
+.st-emotion-cache-10trblm.e1nzilvr1 {
+    position: fixed;
+    top: 0;
+    left: 1;
+    width: 100%;
+    background-color:#C3F1DB;
+    ;
+    padding: 10px 0px;
+    border-radius: 0;
+    z-index: 1000; /* Ensure it's on top of other content */
 }
+
+
 
 /* .st-emotion-cache-1wmy9hl.e1f1d6gn1{
     width: 200px;
@@ -17,5 +24,7 @@
 } */
 
 .st-emotion-cache-1lktqdc.ezrtsby2{
-    height: 100px;
+    height: 0px;
 }
+
+

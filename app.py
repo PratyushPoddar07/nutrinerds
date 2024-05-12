@@ -1,4 +1,3 @@
-
 from PIL import Image
 import io
 import logging
@@ -8,6 +7,8 @@ from streamlit_option_menu import option_menu
 # from langchain.chains.conversations.memory import ConversationEntityMemory
 # from langchain.chains.conversation.prompt import ENTITY_MEMORY_CONVERSATION_TEMPLATE
 # from langchain.llms import OpenAI
+
+logging.basicConfig(level=logging.INFO)
 
 import google.generativeai as genai
 from google.api_core import exceptions as google_exceptions
@@ -30,18 +31,14 @@ fixed_logo = """
     <p class="text-lg font-bold text-gray-800">Docify</p>
 </div>
 """
-
 st.set_page_config(page_title="Docify", page_icon=":gem:")
 
 with open('style.css') as f:
     st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 st.title("Docify 🩺")
 
-
-
-
 class MultiApp:
-    def _init_(self):
+    def init(self):
         self.apps = []
 
     def add_app(self, title, function):
@@ -87,6 +84,7 @@ class MultiApp:
             # st.caption(
             #     "Note: The vision model gemini-pro-vision is not optimized for multi-turn chat."
             # )
+
             if uploaded_image:
                 image_bytes = uploaded_image.read()
             picture = st.camera_input("Take a picture")
