@@ -1,40 +1,45 @@
-from PIL import Image
+
+
+
 import io
 import logging
+import textwrap
+from PIL import Image
 import streamlit as st
 from streamlit_option_menu import option_menu
-# from langchain.chains import ConversationChain
-# from langchain.chains.conversations.memory import ConversationEntityMemory
-# from langchain.chains.conversation.prompt import ENTITY_MEMORY_CONVERSATION_TEMPLATE
-# from langchain.llms import OpenAI
+import google.generativeai as genai
 
 logging.basicConfig(level=logging.INFO)
 
-import google.generativeai as genai
-from google.api_core import exceptions as google_exceptions
+# Configure Generative AI API Key
+genai.configure(api_key='AIzaSyAdw7cCGn88hEjo-Y15fF2CzRB4-JswEsM')
 
-import about, account, home, history
+# Function to format text as Markdown
+def to_markdown(text):
+    text = text.replace('•', '  *')
+    return textwrap.indent(text, '> ', predicate=lambda _: True)
 
-temperature = 0.9
+# Function to generate text from a text prompt
+def generate_text(prompt):
+    model = genai.GenerativeModel('gemini-pro')
+    response = model.generate_content(prompt)
+    return response.text
 
-generation_config = {
-    "temperature": temperature,
-    "top_p": 0.95,
-    "top_k": 1,
-    "max_output_tokens": 99998,
-}
+# chat_message =st.chat_input("Ask me about anything...")
 
+# Function to generate text from image bytes
+def generate_text_from_image(image_bytes):
+    try:
+        img = Image.open(io.BytesIO(image_bytes))
+        model = genai.GenerativeModel('gemini-pro-vision')
+        response = model.generate_content([img], stream=True)
+        response.resolve()
+        return response.text
+    except Exception as e:
+        return f"Error: {str(e)}"
 
-# Define the fixed text logo
-fixed_logo = """
-<div class="fixed top-0 left-0 w-full bg-white py-4 px-6 z-50">
-    <p class="text-lg font-bold text-gray-800">Docify</p>
-</div>
-"""
+# Streamlit App
 st.set_page_config(page_title="Docify", page_icon=":gem:")
-
-with open('style.css') as f:
-    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 st.title("Docify 🩺")
 
 class MultiApp:
@@ -50,7 +55,7 @@ class MultiApp:
     def run(self):
         with st.sidebar:
             app = option_menu(
-                menu_title='DociFy',
+                menu_title='Docify',
                 options=['Home', 'Account', 'History', 'About'],
                 icons=['house-fill', 'person-circle', 'clock-history', 'chat-fill'],
                 menu_icon='chat-text-fill',
@@ -63,137 +68,90 @@ class MultiApp:
                 }
             )
             if app == 'Home':
-                home.app()
-            if app == 'Account':
-                account.app()
-            if app == 'History':
-                history.app()
-            if app == 'About':
-                about.app()
+                self.home()
+            elif app == 'Account':
+                self.account()
+            elif app == 'History':
+                self.history()
+            elif app == 'About':
+                self.about()
 
-        genai.configure(api_key='AIzaSyAdw7cCGn88hEjo-Y15fF2CzRB4-JswEsM')
-        select_model = st.radio("Select Type", ["Consultancy", "Image Consultancy"])
+    def home(self):
+        st.write("Welcome to the Home page!")
 
-        if select_model == "Image Consultancy":
-            uploaded_image = st.file_uploader(
-                "upload image",
-                label_visibility="collapsed",
-                accept_multiple_files=False,
-                type=["png", "jpg"],
-            )
-            # st.caption(
-            #     "Note: The vision model gemini-pro-vision is not optimized for multi-turn chat."
-            # )
+    def account(self):
+        st.write("Welcome to the Account page!")
 
-            if uploaded_image:
-                image_bytes = uploaded_image.read()
-            picture = st.camera_input("Take a picture")
+    def history(self):
+        st.write("Welcome to the History page!")
 
-            # if picture:
-            #     st.image(picture)
+    def about(self):
+        st.write("Welcome to the About page!")
 
-            if picture is not None:
-                image_bytes = picture.getvalue()
-
-        def get_response(messages, model="gemini-pro"):
-            model = genai.GenerativeModel(model)
-            res = model.generate_content(messages,
-                                        generation_config=generation_config)
-            return res
-
-
-        if "messages" not in st.session_state:
-            st.session_state["messages"] = []
-        messages = st.session_state["messages"]
-
-        # The vision model gemini-pro-vision is not optimized for multi-turn chat.
-        # st.header("Docify")
-        # st.write("How can I help you?")
-
-        # Initialize session state for chat history if it doesn't exist
-        if messages and select_model != "Image Consultancy":
-            for item in messages:
-                role, parts = item.values()
-                if role == "user":
-                    st.chat_message("user").markdown(parts[0])
-                elif role == "model":
-                    st.chat_message("assistant").markdown(parts[0])
-        # chat = st.radio("Select one of the following options", ["Common Cold", "Influenza (Flu)", "Pneumonia", "Tuberculosis (TB)", "Hypertension", "Other","none of these"])
-        # if chat == "Other":
-        #     chat2 = st.text_input("Enter the disease name")
-        # if chat == "Other":
-        #     chat = chat2
-
-        st.write("How can I help you?")
-        chat_message = st.chat_input("Ask me about health related query...")
-
-        # if chat == "none of these":
-        #     instruction = " "
-        # else:
-        #     instruction = "person is in " + chat
-
-        res = None
-        if chat_message:
-            st.chat_message("user").markdown(chat_message)
-            res_area = st.chat_message("assistant").markdown("...")
-
-            if select_model == "Image Consultancy":
-                if "image_bytes" in globals():
-                    vision_message = [chat_message,
-                                      Image.open(io.BytesIO(image_bytes))]
-                    try:
-                        res = get_response(vision_message, model="gemini-pro-vision")
-                    except google_exceptions.InvalidArgument as e:
-                        if "API key not valid" in str(e):
-                            st.error("API key not valid. Please pass a valid API key.")
-                        else:
-                            st.error("An error occurred. Please try again.")
-                    except Exception as e:
-                        logging.error(e)
-                        st.error("Error occurred. Please refresh your page and try again.")
-                else:
-                    vision_message = [{"role": "user", "parts": [chat_message]}]
-                    st.warning(
-                        "Since there is no uploaded image, the result is generated by the default gemini-pro model.")
-                    try:
-                        res = get_response(vision_message)
-                    except google_exceptions.InvalidArgument as e:
-                        if "API key not valid" in str(e):
-                            st.error("API key not valid. Please pass a valid API key.")
-                        else:
-                            st.error("An error occurred. Please try again.")
-                    except Exception as e:
-                        logging.error(e)
-                        st.error("Error occurred. Please refresh your page and try again.")
-            else:
-                messages.append(
-                    {"role": "user", "parts": [chat_message]},
-                )
-                try:
-                    res = get_response(messages)
-                except google_exceptions.InvalidArgument as e:
-                    if "API key not valid" in str(e):
-                        st.error("API key not valid. Please pass a valid API key.")
-                    else:
-                        st.error("An error occurred. Please refresh your page and try again.")
-                except Exception as e:
-                    logging.error(e)
-                    st.error("Error occurred. Please refresh your page and try again.")
-
-            if res is not None:
-                res_text = ""
-                for chunk in res:
-                    if chunk.candidates:
-                        res_text += chunk.text
-                    if res_text == "":
-                        res_text = "unappropriate words"
-                        st.error("Your words violate the rules that have been set. Please try again!")
-                res_area.markdown(res_text)
-
-                if select_model != "Image Consultancy":
-                    messages.append({"role": "model", "parts": [res_text]})
-
-
-# Instantiate the MultiApp class and run the app
 app = MultiApp()
 app.run()
+
+# Main App Logic
+with open('style.css') as f:
+    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
+select_model = st.radio("Select Type", ["Text Consultancy", "Image Consultancy", "Image Consultancy (Capture)"])
+
+if select_model == "Text Consultancy":
+    text_prompt = st.text_input("Enter your Query:")
+    
+    if st.button("Enter"):
+        generated_text = generate_text(text_prompt)
+        st.markdown(to_markdown(generated_text))
+
+elif select_model == "Image Consultancy":
+    uploaded_image = st.file_uploader(
+        "Upload Image",
+        type=["png", "jpg"],
+        accept_multiple_files=False
+    )
+
+    if uploaded_image:
+        image_bytes = uploaded_image.read()
+        st.image(image_bytes, caption="Uploaded Image", use_column_width=True)
+
+        if st.button("Enter"):
+            generated_text = generate_text_from_image(image_bytes)
+            st.markdown(to_markdown(generated_text))
+
+    
+elif select_model == "Image Consultancy (Capture)":
+    st.write("Click below to capture an image using your camera:")
+    # camera_image = st.image("", channels="BGR", use_column_width=True)
+    picture = st.camera_input("Take a picture")
+
+    if picture:
+        # image_bytes = picture.read()
+        st.image(picture,caption="Captured image",use_column_width=True)
+
+
+        if st.button("Enter"):
+            generated_text = generate_text_from_image(picture.getvalue())
+            st.markdown(to_markdown(generated_text))
+
+    # if picture:
+    #     st.image(picture)
+
+    # if picture is not None:
+    #     image_bytes = picture.getvalue()
+
+
+    # if st.button("Capture Image"):
+    #     camera = st.camera()
+    #     if camera:
+    #         captured_image = Image.fromarray(camera.astype("uint8"))
+    #         st.image(captured_image, caption="Captured Image", use_column_width=True)
+
+    #         if st.button("Generate Text"):
+    #             captured_image_bytes = io.BytesIO()
+    #             captured_image.save(captured_image_bytes, format="PNG")
+    #             generated_text = generate_text_from_image(captured_image_bytes.getvalue())
+    #             st.markdown(to_markdown(generated_text))
+
+else:
+    st.write("Select a consultancy type to proceed.")
