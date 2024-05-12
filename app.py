@@ -35,7 +35,7 @@ page = st.sidebar.selectbox("Select a page", ["Home", "History", "About"])
 
 # Create a home page
 if page == "Home":
-    genai.configure(api_key='AIzaSyAdw7cCGn88hEjo-Y15fF2CzRB4-JswEsM')
+    genai.configure(api_key='Enter your own API key')
     select_model = st.radio("Select Type", ["Consultancy", "Image Consultancy"])
 
     if select_model == "Image Consultancy":
