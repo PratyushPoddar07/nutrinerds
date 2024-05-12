@@ -55,7 +55,8 @@ To install DociFy, follow these steps:
 ```
 5. Web Design UI/UX
 
-![alt text](image-1.png)
+![image-1](https://github.com/PratyushPoddar07/nutrinerds/assets/133110531/cfc98c85-daae-48b8-a3ce-28957c1d79e5)
+
 
  
 ## Usage
