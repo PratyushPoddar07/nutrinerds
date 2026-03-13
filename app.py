@@ -2,212 +2,160 @@ import streamlit as st
 from PIL import Image
 import io
 import logging
-import hashlib
-#import os
-#import requests
-#import json
-import google.generativeai as genai
-from google.api_core import exceptions as google_exceptions
-# start
+import base64
+import os
+from dotenv import load_dotenv
+import openai
 
-temperature = 0.9
+# Load environment variables
+load_dotenv()
 
-generation_config = {
-    "temperature": temperature,
-    "top_p": 0.95,
-    "top_k": 1,
-    "max_output_tokens": 99998,
-}
-fixed_logo = """
-<div class="fixed top-0 left-0 w-full bg-white py-4 px-6 z-50">
-    <p class="text-lg font-bold text-gray-800">Docify</p>
-</div>
-"""
-with open('style.css') as f:
-    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-st.title("Docify 🩺")
-# st.title("Docify 🩺")
-# st.write("---")
-# Create a sidebar menu
-st.sidebar.title("Menu")
-page = st.sidebar.selectbox("Select a page", ["Home", "History", "About"])
+# Page Config
+st.set_page_config(
+    page_title="Docify | AI Health Assistant",
+    page_icon="🩺",
+    layout="wide",
+)
 
+# Custom CSS Integration
+def local_css(file_name):
+    if os.path.exists(file_name):
+        with open(file_name) as f:
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
-# Create a home page
+local_css('style.css')
+
+# Initialize Session State
+if "messages" not in st.session_state:
+    st.session_state["messages"] = []
+
+# Silent API Key Loading (Completely hidden from UI)
+api_key = os.getenv("OPENAI_API_KEY")
+if api_key:
+    client = openai.OpenAI(api_key=api_key)
+else:
+    client = None
+
+# Sidebar Navigation
+with st.sidebar:
+    st.markdown('<div style="text-align: center; padding: 1rem 0;"><h2 style="margin:0;">Dashboard</h2></div>', unsafe_allow_html=True)
+    page = st.selectbox("Navigation", ["Home", "History", "About"], index=0)
+    
+    st.divider()
+    st.caption("Docify v2.0 - Encrypted Session")
+
+# Main Content Logic
 if page == "Home":
-    genai.configure(api_key='Enter your own API key')
-    select_model = st.radio("Select Type", ["Consultancy", "Image Consultancy"])
-
-    if select_model == "Image Consultancy":
-        uploaded_image = st.file_uploader(
-            "upload image",
-            label_visibility="collapsed",
-            accept_multiple_files=False,
-            type=["png", "jpg"],
-        )
-            # st.caption(
-            #     "Note: The vision model gemini-pro-vision is not optimized for multi-turn chat."
-            # )
-        if uploaded_image:
-            image_bytes = uploaded_image.read()
-        picture = st.camera_input("Take a picture")
-
-            # if picture:
-            #     st.image(picture)
-
-        if picture is not None:
-            image_bytes = picture.getvalue()
-
-    def get_response(message, model="gemini-pro"):
-        model = genai.GenerativeModel(model)
-        res = model.generate_content(message,
-                                    generation_config=generation_config)
-        return res
-
-
-    if "message" not in st.session_state:
-        st.session_state["message"] = []
-    message = st.session_state["message"]
-
-        # The vision model gemini-pro-vision is not optimized for multi-turn chat.
-        # st.header("Docify")
-        # st.write("How can I help you?")
-
-        # Initialize session state for chat history if it doesn't exist
-    if message and select_model != "Image Consultancy":
-        for item in message:
-            role, parts = item.values()
-            if role == "user":
-                st.chat_message("user").markdown(parts[0])
-            elif role == "model":
-                st.chat_message("assistant").markdown(parts[0])
+    # Hero Section
+    st.markdown('''
+        <div class="docify-header">
+            <h1 class="docify-logo">Docify</h1>
+            <p class="docify-tagline">Advanced AI-Powered Healthcare Consultancy</p>
+        </div>
+    ''', unsafe_allow_html=True)
     
-    # chat = st.radio("Select one of the following options", ["Common Cold", "Influenza (Flu)", "Pneumonia", "Tuberculosis (TB)", "Hypertension", "Other","none of these"])
-    # if chat == "Other":
-    #     chat2 = st.text_input("Enter the disease name")
-    # if chat == "Other":
-    #     chat = chat2
+    if not client:
+        st.error("🔑 API Key Missing: Please ensure OPENAI_API_KEY is set in your .env file.")
+        st.stop()
 
-    st.write("How can I help you?")
-    chat_message = st.chat_input("Ask me about health related query...")
-    
-    # if chat == "none of these":
-    #     instruction = " "
-    # else:
-    #     instruction = "i am having " + chat
-    
-    
-    res = None
-    if chat_message:
-        st.chat_message("user").markdown(chat_message)
-        res_area = st.chat_message("assistant").markdown("...")
+    # Model Selection Area
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col1:
+        st.markdown("### Settings")
+        select_model = st.radio("Mode", ["Consultancy", "Image Analysis"])
+        st.info("💡 Image Analysis uses GPT-4o Vision.")
+
+    with col2:
+        # Chat Interface Container
+        chat_container = st.container()
         
+        # Image Upload (Conditional)
+        image_bytes = None
+        if select_model == "Image Analysis":
+            st.markdown("### Upload Health Visuals")
+            uploaded_file = st.file_uploader("Upload Medical Image/Report", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
+            if uploaded_file:
+                image_bytes = uploaded_file.read()
+                st.image(image_bytes, caption="Uploaded for analysis", use_column_width=True)
+            
+            cam_picture = st.camera_input("Quick Scan")
+            if cam_picture:
+                image_bytes = cam_picture.getvalue()
 
-        if select_model == "Image Consultancy":
-            if "image_bytes" in globals():
-                vision_message = [chat_message,
-                                    Image.open(io.BytesIO(image_bytes))]
-                try:
-                    res = get_response(vision_message, model="gemini-pro-vision")
-                except google_exceptions.InvalidArgument as e:
-                    if "API key not valid" in str(e):
-                        st.error("API key not valid. Please pass a valid API key.")
-                    else:
-                        st.error("An error occurred. Please try again.")
-                except Exception as e:
-                    logging.error(e)
-                    st.error("Error occurred. Please refresh your page and try again.")
-            else:
-                vision_message = [{"role": "user", "parts": [chat_message]}]
-                st.warning(
-                    "Since there is no uploaded image, the result is generated by the default gemini-pro model.")
-                try:
-                    res = get_response(vision_message)
-                except google_exceptions.InvalidArgument as e:
-                    if "API key not valid" in str(e):
-                        st.error("API key not valid. Please pass a valid API key.")
-                    else:
-                        st.error("An error occurred. Please try again.")
-                except Exception as e:
-                    logging.error(e)
-                    st.error("Error occurred. Please refresh your page and try again.")
-        else:
-            message.append(
-                {"role": "user", "parts": [chat_message]},
-            )
+        # Render Chat History
+        with chat_container:
+            for msg in st.session_state.messages:
+                with st.chat_message(msg["role"]):
+                    st.markdown(msg["content"])
+
+    # Utilities
+    def encode_image(data):
+        return base64.b64encode(data).decode('utf-8')
+
+    # Chat Input (Bottom)
+    if chat_message := st.chat_input("Describe your symptoms or health query..."):
+        with col2:
+            st.chat_message("user").markdown(chat_message)
+            st.session_state.messages.append({"role": "user", "content": chat_message})
+            
+            res_area = st.chat_message("assistant").empty()
+            
             try:
-                res = get_response(message)
-            except google_exceptions.InvalidArgument as e:
-                if "API key not valid" in str(e):
-                    st.error("API key not valid. Please pass a valid API key.")
+                if select_model == "Image Analysis" and image_bytes:
+                    b64_img = encode_image(image_bytes)
+                    payload = [
+                        {"role": "user", "content": [
+                            {"type": "text", "text": chat_message},
+                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}}
+                        ]}
+                    ]
+                    stream = client.chat.completions.create(model="gpt-4o", messages=payload, stream=True)
                 else:
-                    st.error("An error occurred. Please refresh your page and try again.")
+                    stream = client.chat.completions.create(model="gpt-4o", messages=st.session_state.messages, stream=True)
+
+                full_response = ""
+                for chunk in stream:
+                    if chunk.choices[0].delta.content:
+                        full_response += chunk.choices[0].delta.content
+                        res_area.markdown(full_response + "▌")
+                res_area.markdown(full_response)
+                st.session_state.messages.append({"role": "assistant", "content": full_response})
+                
             except Exception as e:
-                logging.error(e)
-                st.error("Error occurred. Please refresh your page and try again.")
+                st.error(f"Execution Error: {str(e)}")
 
-        if res is not None:
-            res_text = ""
-            for chunk in res:
-                if chunk.candidates:
-                    res_text += chunk.text
-                if res_text == "":
-                    res_text = "unappropriate words"
-                    st.error("Your words violate the rules that have been set. Please try again!")
-            res_area.markdown(res_text)
-
-            if select_model != "Image Consultancy":
-                message.append({"role": "model", "parts": [res_text]})
- 
-    # st.title("Food Detection Chatbot")
-    # st.write("Welcome to our food detection chatbot!")
-
-    # # Add an image scanner
-    # uploaded_image = st.file_uploader("Upload an image of your food", type=["png", "jpg"])
-    # if uploaded_image:
-    #     image_bytes = uploaded_image.read()
-    #     st.image(image_bytes, caption="Uploaded Image")
-    #     # image_data = image_bytes.decode("utf-8")
-    #     try:
-    #         image_data = image_bytes.decode("utf-8")
-    #     except UnicodeDecodeError:
-    #         image_data = image_bytes.decode("latin-1")
-    #     # Add a chatbot
-    #     st.header("Chat with our food detection bot")
-    #     user_input = st.text_input("Ask our bot about your food")
-    #     if user_input:
-    #         api_url = "https://api.gemini.com/v1/food/detect"
-    #         api_key = "AIzaSyCDdVJJrGLSKFN56TaPXEu_y6Vauvs7IKg"
-    #         headers = {"Authorization": f"Bearer {api_key}"}
-    #         data = json.dumps({"image": image_data, "text": user_input})
-    #         response = requests.post(api_url, headers=headers, json=data)
-    #         if response.status_code == 200:
-    #             response_json = response.json()
-    #             st.write("Bot:", response_json["message"])
-    #         else:
-    #             st.write("Error:", response.text)
-
-    #         # Call your food detection API or model here
-    #         response = "Sorry, our bot is still learning!"
-    #         st.write("Bot:", response)
-
-# Create an account page
-elif page == "History":   
-    st.title("History")
-    # for item in message:
-    #     role, parts = item.values()
-    #     if role == "user":
-    #         st.write(parts[0])
-    #     elif role == "model":
-    #         st.write(parts[0])
+elif page == "History":
+    st.markdown('<div class="docify-header"><h1 class="docify-logo">Session History</h1></div>', unsafe_allow_html=True)
     
-# Main function to run Streamlit app
+    col1, col2, col3 = st.columns([1, 4, 1])
+    with col2:
+        if not st.session_state.messages:
+            st.info("No logs found for this session.")
+        else:
+            if st.button("Clear History"):
+                st.session_state.messages = []
+                st.rerun()
+                
+            for msg in st.session_state.messages:
+                with st.chat_message(msg["role"]):
+                    st.markdown(f"**{msg['role'].title()}**")
+                    st.markdown(msg["content"])
+                    st.caption("---")
 
-# Create an about page
 elif page == "About":
-    st.title("About")
-    st.write("This is our about page")
-
-# Run the app
-# if _name_ == "_main_":
-#     st.write("Running the app...")
+    st.markdown('<div class="docify-header"><h1 class="docify-logo">About Docify</h1></div>', unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown("""
+        ### Intelligent Health Bridge
+        Docify leverages OpenAI's GPT-4o engine to provide instant, clear, and actionable health insights. 
+        Whether you're describing symptoms or uploading a medical visual, Docify analyzes the data to help you understand your situation better.
+        
+        #### Core Capabilities:
+        - **Symptom Analysis**: Get clarity on common health issues.
+        - **Vision AI**: Analysis of medical images and reports.
+        - **Privacy First**: Secure session-based history and silent key loading.
+        
+        ---
+        *⚠️ **Disclaimer**: This tool is for informational purposes only. It is not a substitute for professional medical advice, diagnosis, or treatment.*
+        """)

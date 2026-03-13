@@ -1,30 +1,120 @@
-.st-emotion-cache-10trblm.e1nzilvr1 {
-    position: fixed;
-    top: 0;
-    left: 1;
-    width: 100%;
-    background-color:#C3F1DB;
-    ;
-    padding: 10px 0px;
-    border-radius: 0;
-    z-index: 1000; /* Ensure it's on top of other content */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@400;700;900&display=swap');
+
+:root {
+    --primary-color: #0d9488; /* Teal 600 */
+    --primary-hover: #0f766e; /* Teal 700 */
+    --bg-color: #f8fafc; /* Slate 50 */
+    --sidebar-bg: #ffffff;
+    --text-main: #0f172a; /* Slate 900 */
+    --text-muted: #64748b; /* Slate 500 */
+    --glass-bg: rgba(255, 255, 255, 0.8);
+    --glass-border: rgba(226, 232, 240, 0.8); /* Slate 200 */
+    --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
 
-
-
-/* .st-emotion-cache-1wmy9hl.e1f1d6gn1{
-    width: 200px;
-    height: 300px;
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    padding: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    overflow-y: auto;
-} */
-
-.st-emotion-cache-1lktqdc.ezrtsby2{
-    height: 0px;
+/* Global Styles */
+.stApp {
+    background-color: var(--bg-color);
+    font-family: 'Inter', sans-serif;
 }
 
+/* Modern Sidebar */
+[data-testid="stSidebar"] {
+    background-color: var(--sidebar-bg);
+    border-right: 1px solid var(--glass-border);
+}
 
+/* Typography */
+h1, h2, h3 {
+    font-family: 'Outfit', sans-serif;
+    color: var(--text-main);
+    letter-spacing: -0.02em;
+}
+
+/* Premium Header */
+.docify-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 0;
+    margin-bottom: 2rem;
+    background: linear-gradient(135deg, #0d9488 0%, #065f46 100%);
+    border-radius: 24px;
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+}
+
+.docify-logo {
+    font-size: 3.5rem;
+    font-weight: 900;
+    color: white;
+    font-family: 'Outfit', sans-serif;
+    margin: 0;
+}
+
+.docify-tagline {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+    margin-top: 0.5rem;
+}
+
+/* Chat Message Styling */
+.stChatMessage {
+    background-color: white !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: 16px !important;
+    padding: 1.5rem !important;
+    box-shadow: var(--card-shadow) !important;
+    margin-bottom: 1.5rem !important;
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Chat Input Refinement */
+.stChatInputContainer {
+    padding: 2rem 5rem !important;
+    background: transparent !important;
+}
+
+[data-testid="stChatInput"] {
+    border-radius: 9999px !important;
+    border: 2px solid var(--glass-border) !important;
+    padding: 0.5rem 1rem !important;
+    transition: all 0.2s;
+}
+
+[data-testid="stChatInput"]:focus-within {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.1) !important;
+}
+
+/* Navigation & Widgets */
+.stSelectbox label {
+    font-weight: 600 !important;
+    color: var(--text-muted) !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* Buttons */
+.stButton > button {
+    border-radius: 12px !important;
+    background-color: var(--primary-color) !important;
+    color: white !important;
+    font-weight: 600 !important;
+    padding: 0.5rem 1.5rem !important;
+    border: none !important;
+    transition: background 0.2s !important;
+}
+
+.stButton > button:hover {
+    background-color: var(--primary-hover) !important;
+}
+
+/* Hide Streamlit elements */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
