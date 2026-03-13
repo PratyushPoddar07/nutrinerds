@@ -31,10 +31,12 @@ if "messages" not in st.session_state:
 
 # Silent API Key Loading (Completely hidden from UI)
 api_key = os.getenv("OPENAI_API_KEY")
+client = None
 if api_key:
-    client = openai.OpenAI(api_key=api_key)
-else:
-    client = None
+    try:
+        client = openai.OpenAI(api_key=api_key)
+    except Exception as e:
+        logging.error(f"Failed to initialize OpenAI client: {e}")
 
 # Sidebar Navigation
 with st.sidebar:
