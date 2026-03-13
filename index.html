@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <title>Docify | AI Health Assistant</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@stlite/mountable@0.31.0/build/stlite.css"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@stlite/mountable@0.31.0/build/stlite.js"></script>
+    <script>
+      stlite.mount(
+        {
+          requirements: ["streamlit", "openai", "python-dotenv", "Pillow", "streamlit-option-menu"],
+          entrypoint: "main.py",
+          files: {
+            "main.py": `
+import streamlit as st
+from streamlit_option_menu import option_menu
+import about, account, home, history
+
+st.set_page_config(page_title="DociFy")
+
+def run():
+    with st.sidebar:
+        app = option_menu(
+            menu_title='DociFy',
+            options=['Home','Account','History','About'],
+            icons=['house-fill','person-circle','clock-history','chat-fill'],
+            menu_icon='chat-text-fill',
+            default_index=1,
+            styles={
+                "container":{"padding":"1!important","background-color":'#C3F1DB'},
+                "icons":{"color":"white","font-size":"23px"},
+                "nav-link": {"color":"black","font-size":"20px","text-align":"left"},
+                "nav-link-selected":{"background-color":"#02ab21"},
+            }
+        )
+
+    if app == 'Home':
+        home.app()
+    if app =='Account':
+        account.app()
+    if app =='History':
+        history.app()
+    if app == 'About':
+        about.app()
+
+run()
+`,
+            "home.py": `
+import streamlit as st
+def app():
+    st.write('home')
+`,
+            "account.py": `
+import streamlit as st
+def app():
+    st.title('Welcome to :violet[DociFy] 🩺 ')
+`,
+            "history.py": `
+import streamlit as st
+def app():
+    st.write('history')
+`,
+            "about.py": `
+import streamlit as st
+def app():
+    st.write('about')
+`,
+            "style.css": `
+/* Your CSS content here if needed */
+`
+          },
+        },
+        document.getElementById("root")
+      );
+    </script>
+  </body>
+</html>
